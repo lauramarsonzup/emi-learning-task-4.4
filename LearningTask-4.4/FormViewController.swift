@@ -14,44 +14,74 @@ class FormViewController: UIViewController {
     @IBOutlet weak var areaAtuacaoTextField: UITextField!
     @IBOutlet weak var statusProfissionalTextField: UITextField!
     
+    typealias MensagemDeValidacao = String
+    
     override func viewDidLoad() {
         super.viewDidLoad()
     }
 
     @IBAction func botaoSubmissaoPressionado(_ sender: UIButton) {
-        exibeAlertaDeRevisao()
+        
+        switch todosCamposForamPreenchidos() {
+            
+        case (false, let mensagemValidacao):
+            exibeAlerta(titulo: "Quase lá!", mensagem: mensagemValidacao)
+            
+        case (true, _):
+            submeterInscricao()
+        }
     }
     
-    func exibeAlertaDeRevisao() {
-        let mensagem = """
-            Antes de enviarmos, por favor, revise seus dados:
+    func todosCamposForamPreenchidos() -> (Bool, MensagemDeValidacao?) {
         
-            Nome: \(nomeTextField.text!)
-            Email: \(emailTextField.text!)
-            Área de Atuação: \(areaAtuacaoTextField.text!)
-            Status Profissional: \(statusProfissionalTextField.text!)
-        """
+        guard let nome = nomeTextField.text, !nome.isEmpty else {
+            return (false, "Nome não pode estar em branco.")
+        }
         
-        let alert = UIAlertController(title: "Quase lá!", message: mensagem, preferredStyle: .actionSheet)
+        guard let email = emailTextField.text, !email.isEmpty else {
+            return (false, "Email não pode estar em branco.")
+        }
         
-        alert.addAction(UIAlertAction(title: "Confirmar", style: .default, handler: acaoDeConfirmacaoDisparada))
+        guard emailEhValido(email) else {
+            return (false, "O email informado é inválido.")
+        }
         
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        guard let areaAtuacao = areaAtuacaoTextField.text, !areaAtuacao.isEmpty else {
+            return (false, "Informe sua área de atuação.")
+        }
         
-        self.present(alert, animated: true, completion: nil)
+        guard let statusProfissional = statusProfissionalTextField.text, !statusProfissional.isEmpty else {
+            return (false, "Informe seu status profissional.")
+        }
+        
+        return (true, nil)
     }
     
-    func acaoDeConfirmacaoDisparada(_ action: UIAlertAction) {
-        // executa alguma lógica aqui e ...
-        exibeAlertaDeConfirmacao()
+    func emailEhValido(_ email: String) -> Bool {
+        let emailPadrao = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+
+        let emailPredicate = NSPredicate(format:"SELF MATCHES %@", emailPadrao)
+        
+        return emailPredicate.evaluate(with: email)
+    }
+        
+    func submeterInscricao() {
+        exibeAlerta(titulo: "Feito!", mensagem: "Verifique seu email e tenha acesso ao documento.")
+        apagarCamposDoFormulario()
     }
     
-    func exibeAlertaDeConfirmacao() {
-        let alert = UIAlertController(title: "Feito!", message: "Verifique seu email e tenha acesso ao documento.", preferredStyle: .alert)
+    func exibeAlerta(titulo: String? = "Quase lá!", mensagem: String? = "Verifique os dados informados e tente novamente.") {
+        let alert = UIAlertController(title: titulo, message: mensagem, preferredStyle: .alert)
         
         alert.addAction(UIAlertAction(title: "Ok!", style: .cancel, handler: nil))
         
         self.present(alert, animated: true, completion: nil)
+    }
+    
+    func apagarCamposDoFormulario() {
+        [nomeTextField, emailTextField, areaAtuacaoTextField, statusProfissionalTextField].forEach { textField in
+            textField.text = ""
+        }
     }
 
 
